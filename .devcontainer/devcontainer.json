@@ -1,0 +1,7 @@
+{
+    "name": "Tcl WASM",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    }
+}
