@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+<!-- Based on https://ecky-l.github.io/wacl/ -->
+<head>
+    <link rel="stylesheet" href="stylesheet.css" media="screen">
+    <script data-main="js/main" src="js/require.js"></script>
+    <title>HTTP request for Wacl: Tcl in WebAssembly</title>
+</head>
+
+<body>
+
+<div class="wrapper">
+    <div id="container">
+        <div id="main" role="main">
+            <article class="_commented_markdown-body">
+                <h3>Wacl HTTP request Test Page</h3>
+                <p>This is a simple test page for running Tcl in the browser on the client side.
+                    Put your code in the box below and press Ctrl-Enter to eval it.
+                </p>
+
+                <button id="tcl_run">Run!</button>
+                <div class="demoarea">
+                    <div id="tcl_out">
+                        <div>
+                            <pre></pre>
+                        </div>
+                    </div>
+                    <div id="tcl_in">
+<textarea>
+set func_ptr_number 2
+puts [::wacl::jscall $func_ptr_number "string" "string" "https://httpbin.org/anything"]
+</textarea>
+                    </div>
+                </div>
+
+                <script type="application/javascript">
+                    require(['tcl/wacl', 'jquery-3.2.0.min'], function (wacl) {
+                        wacl.onReady(function (interpreter) {
+                            'use strict';
+                            const wrappedFuncName = interpreter.jswrap(function (ptrUrl) {
+                                const url = interpreter.ptr2str(ptrUrl);
+                                const xhr = new XMLHttpRequest();
+                                xhr.open('GET', url, false);
+                                xhr.send();
+                                return interpreter.str2ptr(xhr.responseText);
+                            }, 'string', 'string');
+                            console.log('Function is registered as: ', wrappedFuncName);
+
+                            var $inbox = $('#tcl_in > textarea');
+                            var $outbox = $('#tcl_out > div > pre');
+                            var outln = function (val) {
+                                $outbox.text($outbox.text() + val + '\n');
+                                $outbox[0].scrollTop = $outbox[0].scrollHeight;
+                            }
+                            interpreter.stdout = interpreter.stderr = outln;
+
+                            $('#tcl_run').on('click', function () {
+                                outln(interpreter.Eval($('#tcl_in > textarea').val()));
+                            });
+
+                            $inbox.keydown(function (e) {
+                                // Ctrl-Enter pressed
+                                if ((e.keyCode === 10 || e.keyCode === 13) && e.ctrlKey) {
+                                    outln('% ' + $inbox.val());
+                                    try {
+                                        outln(interpreter.Eval($('#tcl_in > textarea').val()));
+                                    } catch (e) {
+                                        outln(e.errorInfo);
+                                    }
+                                    $inbox.val('');
+                                }
+                            });
+                            outln(interpreter.Eval('puts "Tcl version: [info patchlevel]"'));
+                        });
+                    });
+                </script>
+                <section>
+                    <h4>Info</h4>
+                    <p><em>Warning</em> This example employs XMLHTTPRequest in synchronous form. Consider making such calls only from inside
+                        of Web Workers to avoid UI freezes.</p>
+                    <p>And this example:</p>
+                    <ul>
+                        <li> is based on <a href="https://ecky-l.github.io/wacl/">https://ecky-l.github.io/wacl/</a></li>
+                        <li> uses their <a href="https://ecky-l.github.io/wacl/releases/wacl.zip">binary release</a> (released on May 2017)</li>
+                        <li> has sources in <a href="https://github.com/wasm-outbound-http-examples/tcl">this repo</a></li>
+                        <li> Also Wacl source code is in <a href="https://github.com/ecky-l/wacl">this repo</a>.</li>
+                    </ul>
+                </section>
+                <footer class="creds"><small>Created for (wannabe-awesome) <a href="https://github.com/vasilev/HTTP-request-from-inside-WASM">list</a></small></footer>
+            </article>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
